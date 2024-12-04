@@ -10,6 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 5103481655059698665}
   - component: {fileID: 8419816781314276973}
+  - component: {fileID: 8497048220266873687}
   m_Layer: 0
   m_Name: HouseSet
   m_TagString: Untagged
@@ -47,10 +48,32 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4ce1d99160af0ab4ea8af6025b1dace1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  loopBehaviour: 0
   houseSetPlaceholder: {fileID: 5179064114662159302}
   houseSetPrefab: {fileID: 597991486456078113}
   parentHouseSet: {fileID: 0}
   zoomDelay: 3
+--- !u!65 &8497048220266873687
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 597991486456078113}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 32.68102, y: 28.65927, z: 22.811855}
+  m_Center: {x: -0.060941696, y: 14.785844, z: -0.2057705}
 --- !u!1 &2744179053312543894
 GameObject:
   m_ObjectHideFlags: 0
