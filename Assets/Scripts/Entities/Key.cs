@@ -5,8 +5,8 @@ namespace PKDS.Entities
     /// </summary>
     public class Key : Interactable
     {
-        /// <value>Property <c>targetHouseSet</c> represents the target house set of the key.</value>
-        public HouseSet targetHouseSet;
+        /// <value>Property <c>houseSet</c> represents the house set of the key.</value>
+        public HouseSet houseSet;
 
         /// <summary>
         /// Method <c>HandleLeftClickUp</c> handles the left click up event.
@@ -14,7 +14,7 @@ namespace PKDS.Entities
         protected override void HandleLeftClickUp()
         {
             PreventInteraction();
-            targetHouseSet.ZoomIn();
+            houseSet.RoundEnd();
         }
     }
 }

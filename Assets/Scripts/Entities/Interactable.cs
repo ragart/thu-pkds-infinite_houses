@@ -11,6 +11,15 @@ namespace PKDS.Entities
     public class Interactable : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerDownHandler,
         IPointerUpHandler
     {
+        /// <value>Property <c>ScopeLocal</c> represents the local scope.</value>
+        protected const int ScopeLocal = 0;
+        
+        /// <value>Property <c>ScopeGlobal</c> represents the global scope.</value>
+        protected const int ScopeGlobal = 1;
+        
+        /// <value>Property <c>ScopeBoth</c> represents both local and global scopes.</value>
+        protected const int ScopeBoth = 2;
+        
         #region Outline Properties
 
             /// <value>Property <c>OutlineComponent</c> represents the outline of the object.</value>
@@ -32,7 +41,7 @@ namespace PKDS.Entities
             /// <value>Property <c>_isInteractionPrevented</c> represents if the interaction is prevented.</value>
             private bool _isInteractionPrevented;
 
-            #endregion
+        #endregion
         
         #region Unity Event Methods
 
@@ -49,7 +58,7 @@ namespace PKDS.Entities
             /// <summary>
             /// Method <c>Update</c> is called every frame, if the MonoBehaviour is enabled.
             /// </summary>
-            private void Update()
+            protected virtual void Update()
             {
                 Highlight();
             }
@@ -88,7 +97,7 @@ namespace PKDS.Entities
                         if (_isKeyPressed)
                             break;
                         _isKeyPressed = true;
-                        if (_isInteractionPrevented || GameManager.Instance.areAllInteractionsPrevented)
+                        if (_isInteractionPrevented || GameManager.Instance.AreAllInteractionsPrevented)
                             break;
                         HandleLeftClickDown();
                         break;
@@ -110,7 +119,7 @@ namespace PKDS.Entities
                 {
                     case PointerEventData.InputButton.Left:
                         _isKeyPressed = false;
-                        if (_isInteractionPrevented || GameManager.Instance.areAllInteractionsPrevented)
+                        if (_isInteractionPrevented || GameManager.Instance.AreAllInteractionsPrevented)
                             break;
                         HandleLeftClickUp();
                         break;
@@ -173,17 +182,40 @@ namespace PKDS.Entities
             /// </summary>
             protected virtual void Highlight()
             {
-                if (_isKeyPressed || _isInteractionPrevented || GameManager.Instance.areAllInteractionsPrevented)
-                    return;
-                OutlineComponent.enabled = _isPointerOver;
+                if (_isInteractionPrevented || GameManager.Instance.AreAllInteractionsPrevented)
+                    OutlineComponent.enabled = false;
+                else if (!_isKeyPressed)
+                    OutlineComponent.enabled = _isPointerOver;
             }
         
         #endregion
+        
+        #region State Methods
+    
+            /// <summary>
+            /// Method <c>PreventInteraction</c> prevents the interaction.
+            /// </summary>
+            /// <param name="prevent">Whether to prevent the interaction.</param>
+            /// <param name="scope">The scope of the interaction prevention.</param>
+            protected void PreventInteraction(bool prevent = true, int scope = 0)
+            {
+                switch (scope)
+                {
+                    case ScopeLocal:
+                        _isInteractionPrevented = prevent;
+                        break;
+                    case ScopeGlobal:
+                        GameManager.Instance.PreventInteractions(prevent);
+                        break;
+                    case ScopeBoth:
+                        _isInteractionPrevented = prevent;
+                        GameManager.Instance.PreventInteractions(prevent);
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
+            }
 
-        protected void PreventInteraction()
-        {
-            _isInteractionPrevented = true;
-            OutlineComponent.enabled = false;
-        }
+        #endregion
     }
 }
