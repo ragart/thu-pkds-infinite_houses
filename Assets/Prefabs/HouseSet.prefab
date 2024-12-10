@@ -60,7 +60,7 @@ MonoBehaviour:
   keyPrefab: {fileID: 2459665117486452202, guid: cf17de87d2d0bfe4485b95c98a6885e2, type: 3}
   switchComponent: {fileID: 0}
   keyComponent: {fileID: 0}
-  zoomDelay: 3
+  zoomDelay: 5
   outlineTarget: {fileID: 7181146937898587596}
 --- !u!65 &8497048220266873687
 BoxCollider:

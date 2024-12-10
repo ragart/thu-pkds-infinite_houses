@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using UnityEngine;
 using PKDS.Managers;
+using PKDS.Properties;
 
 namespace PKDS.Entities
 {
@@ -13,30 +14,22 @@ namespace PKDS.Entities
     {
         #region Behaviour Properties
 
-            /// <value>Enum <c>LoopBehaviour</c> represents the behaviour of the house set loop.</value>
-            private enum LoopBehaviour
-            {
-                None,
-                Start,
-                Auto,
-                Click
-            }
-
             /// <value>Property <c>loopBehaviour</c> represents the behaviour of the house set loop.</value>
             [Header("Behaviour Properties")]
             [SerializeField]
-            private LoopBehaviour loopBehaviour;
+            private Loop.Behaviour loopBehaviour;
 
             /// <value>Property <c>childLoopBehaviour</c> represents the behaviour of the child house set loop.</value>
             [SerializeField]
-            private LoopBehaviour childLoopBehaviour;
+            private Loop.Behaviour childLoopBehaviour;
 
         #endregion
 
         #region House Set Properties
 
             /// <value>Property <c>houseSetPlaceholder</c> represents the placeholder for the house set prefab.</value>
-            [Header("House Set Properties")] [SerializeField]
+            [Header("House Set Properties")]
+            [SerializeField]
             private Transform houseSetPlaceholder;
 
             /// <value>Property <c>houseSetPrefab</c> represents the prefab of the house set.</value>
@@ -85,8 +78,7 @@ namespace PKDS.Entities
         #region Zoom Properties
 
             /// <value>Property <c>zoomDelay</c> represents the velocity of the zoom.</value>
-            [Header("Zoom Properties")] [SerializeField]
-            private float zoomDelay;
+            private float _zoomDelay = 5f;
             
         #endregion
         
@@ -99,6 +91,16 @@ namespace PKDS.Entities
 
         #endregion
 
+        #region Round Properties
+        
+            /// <value>Property <c>_roundTime</c> represents the time of the round.</value>
+            private float _roundTime;
+            
+            /// <value>Property <c>_isRoundStarted</c> represents if the round is started.</value>
+            private bool _isRoundStarted;
+        
+        #endregion
+        
         #region Unity Event Methods
 
             /// <summary>
@@ -106,42 +108,113 @@ namespace PKDS.Entities
             /// </summary>
             protected override void Awake()
             {
-                // If no zoom delay is set, set it to 1
-                zoomDelay = (zoomDelay <= 0) ? 1 : zoomDelay;
-                
                 // Remove any existing switches or keys
-                var existingSwitches = GetComponentsInChildren<Switch>();
-                foreach (var existingSwitch in existingSwitches)
-                    Destroy(existingSwitch.gameObject);
-                var existingKeys = GetComponentsInChildren<Key>();
-                foreach (var existingKey in existingKeys)
-                    Destroy(existingKey.gameObject);
+                DestroyExistingSwitchesAndKeys();
 
                 // Call the base method
                 base.Awake();
             }
-
+            
             /// <summary>
             /// Method <c>Start</c> is called before the first frame update.
             /// </summary>
             private void Start()
             {
-                switch (loopBehaviour)
+                if (loopBehaviour == Loop.Behaviour.Start)
+                    CreateChildHouseSet();
+            }
+            
+            /// <summary>
+            /// Method <c>OnEnable</c> is called when the object becomes enabled and active.
+            /// </summary>
+            private void OnEnable()
+            {
+                GameManager.OnGameStart += HandleGameStart;
+            }
+            
+            /// <summary>
+            /// Method <c>OnDisable</c> is called when the behaviour becomes disabled or inactive.
+            /// </summary>
+            private void OnDisable()
+            {
+                GameManager.OnGameStart -= HandleGameStart;
+            }
+            
+            /// <summary>
+            /// Method <c>Update</c> is called every frame, if the MonoBehaviour is enabled.
+            /// </summary>
+            protected override void Update()
+            {
+                base.Update();
+                RoundUpdate();
+            }
+        
+        #endregion
+        
+        #region Custom Event Methods
+        
+            /// <summary>
+            /// Method <c>Initialize</c> initializes the house set.
+            /// </summary>
+            /// <param name="setName">The name of the house set.</param>
+            /// <param name="setParent">The parent of the house set.</param>
+            /// <param name="setScale">The scale of the house set.</param>
+            /// <param name="setParentHouseSet">The parent house set of the house set.</param>
+            public override void Initialize(string setName, Transform setParent, Vector3 setScale, HouseSet setParentHouseSet)
+            {
+                gameObject.name = setName;
+                transform.SetParent(setParent);
+                transform.localScale = setScale;
+                parentHouseSet = setParentHouseSet;
+                PreventInteraction(false);
+            }
+            
+            /// <summary>
+            /// Method <c>HandleGameStart</c> handles the game start event.
+            /// </summary>
+            private void HandleGameStart()
+            {
+                if (loopBehaviour == Loop.Behaviour.Start)
+                    DelayedStart();
+            }
+            
+            /// <summary>
+            /// Method <c>DelayedStart</c> is called to delay the start of the house set.
+            /// </summary>
+            /// <exception cref="ArgumentOutOfRangeException">Thrown when an argument is outside the range of valid values.</exception>
+            private void DelayedStart()
+            {
+                // Set the round time
+                SetRoundTime();
+
+                // Check if the behaviour of the first child is different from the game loop behaviour
+                if (loopBehaviour == Loop.Behaviour.Start && childLoopBehaviour != GameManager.Instance.LoopBehaviour)
                 {
-                    case LoopBehaviour.None:
+                    childLoopBehaviour = GameManager.Instance.LoopBehaviour;
+                    childHouseSet.SetLoopBehaviour(childLoopBehaviour, childLoopBehaviour);
+                }
+
+                // Check the behaviour of the house set
+                var targetLoopBehaviour = (loopBehaviour == Loop.Behaviour.Start) ? childLoopBehaviour : loopBehaviour;
+                switch (targetLoopBehaviour)
+                {
+                    case Loop.Behaviour.None:
+                    case Loop.Behaviour.Start:
+                    case Loop.Behaviour.Auto:
+                    case Loop.Behaviour.Click:
                         break;
-                    case LoopBehaviour.Start:
-                        CreateChildHouseSet(childLoopBehaviour);
+                    case Loop.Behaviour.SwitchKey:
                         CreateSwitch();
-                        break;
-                    case LoopBehaviour.Auto:
-                        StartCoroutine(DelayedZoomIn());
-                        break;
-                    case LoopBehaviour.Click:
                         break;
                     default:
                         throw new ArgumentOutOfRangeException();
                 }
+
+                // Set the current behaviour to none
+                loopBehaviour = Loop.Behaviour.None;
+
+                // Start the round
+                RoundStart();
             }
         
         #endregion
@@ -153,10 +226,9 @@ namespace PKDS.Entities
             /// </summary>
             protected override void HandleLeftClickUp()
             {
-                if (loopBehaviour != LoopBehaviour.Click)
+                if (loopBehaviour != Loop.Behaviour.Click)
                     return;
-                PreventInteraction();
-                ZoomIn();
+                parentHouseSet.RoundEnd();
             }
             
         #endregion
@@ -166,36 +238,26 @@ namespace PKDS.Entities
             /// <summary>
             /// Method <c>ZoomIn</c> is called to zoom in the house set.
             /// </summary>
-            public void ZoomIn()
+            private void ZoomIn()
             {
                 if (parentHouseSet == null)
                     return;
-                GameManager.Instance.areAllInteractionsPrevented = true;
                 switch (loopBehaviour)
                 {
-                    case LoopBehaviour.None:
-                    case LoopBehaviour.Start:
-                    case LoopBehaviour.Auto:
+                    case Loop.Behaviour.None:
+                    case Loop.Behaviour.Start:
+                    case Loop.Behaviour.Auto:
                         break;
-                    case LoopBehaviour.Click:
+                    case Loop.Behaviour.Click:
                         OutlineComponent.enabled = false;
+                        break;
+                    case Loop.Behaviour.SwitchKey:
                         break;
                     default:
                         throw new ArgumentOutOfRangeException();
                 }
-                loopBehaviour = LoopBehaviour.None;
                 CreateChildHouseSet();
                 StartCoroutine(ZoomInCoroutine());
-            }
-            
-            /// <summary>
-            /// Method <c>DelayedZoomIn</c> is called to delay the zoom in the house set.
-            /// </summary>
-            /// <returns>IEnumerator</returns>
-            private IEnumerator DelayedZoomIn()
-            {
-                yield return new WaitForSeconds(zoomDelay);
-                ZoomIn();
             }
 
             /// <summary>
@@ -206,9 +268,9 @@ namespace PKDS.Entities
                 // Scale the game object progressively
                 var targetScale = new Vector3(50f, 50f, 50f);
                 var initialScale = parentHouseSet.transform.localScale;
-                for (var elapsedTime = 0f; elapsedTime < zoomDelay; elapsedTime += Time.deltaTime)
+                for (var elapsedTime = 0f; elapsedTime < _zoomDelay; elapsedTime += Time.deltaTime)
                 {
-                    parentHouseSet.transform.localScale = Vector3.Lerp(initialScale, targetScale, elapsedTime / zoomDelay);
+                    parentHouseSet.transform.localScale = Vector3.Lerp(initialScale, targetScale, elapsedTime / _zoomDelay);
                     yield return null;
                 }
                 parentHouseSet.transform.localScale = targetScale;
@@ -223,34 +285,46 @@ namespace PKDS.Entities
                 // Assign the correct behaviour to the child house set
                 childHouseSet.loopBehaviour = childLoopBehaviour;
                 
-                // Reset the level transitioning state
-                GameManager.Instance.areAllInteractionsPrevented = false;
+                // Start the house set
+                DelayedStart();
             }
 
         #endregion
         
-        #region Create Methods
+        #region Create and Destroy Methods
 
             /// <summary>
             /// Method <c>CreateChildHouseSet</c> is called to create a child house set.
             /// </summary>
-            /// <param name="overrideLoopBehaviour">An override loop behaviour.</param>
-            private void CreateChildHouseSet(LoopBehaviour overrideLoopBehaviour = LoopBehaviour.None)
+            private void CreateChildHouseSet()
             {
                 // Create and configure the child house set
                 childHouseSet = Instantiate(houseSetPrefab, houseSetPlaceholder.position, houseSetPlaceholder.rotation)
                     .GetComponent<HouseSet>();
-                childHouseSet.transform.SetParent(houseSetPlaceholder);
-                childHouseSet.transform.localScale = new Vector3(1f, 1f, 1f);
-                childHouseSet.gameObject.name = "HouseSet";
-                childHouseSet.loopBehaviour = overrideLoopBehaviour;
-                childHouseSet.childLoopBehaviour = childLoopBehaviour;
-                childHouseSet.parentHouseSet = this;
-                
-                // Create a switch on a random placeholder of the child house set
-                childHouseSet.CreateSwitch();
+                childHouseSet.Initialize("HouseSet" + GameManager.Instance.Round, houseSetPlaceholder, new Vector3(1f, 1f, 1f), this);
+                childHouseSet.SetLoopBehaviour(childLoopBehaviour, childLoopBehaviour);
+                childHouseSet.SetZoomDelay(GameManager.Instance.ZoomDelay);
+            }
+
+            /// <summary>
+            /// Method <c>SetLoopBehaviour</c> sets the loop behaviour.
+            /// </summary>
+            /// <param name="setLoopBehaviour"></param>
+            /// <param name="setChildLoopBehaviour"></param>
+            private void SetLoopBehaviour(Loop.Behaviour setLoopBehaviour, Loop.Behaviour setChildLoopBehaviour)
+            {
+                loopBehaviour = setLoopBehaviour;
+                childLoopBehaviour = setChildLoopBehaviour;
             }
             
+            /// <summary>
+            /// Method <c>SetZoomDelay</c> sets the zoom delay.
+            /// </summary>
+            private void SetZoomDelay(float setZoomDelay)
+            {
+                _zoomDelay = setZoomDelay;
+            }
+
             /// <summary>
             /// Method <c>CreateSwitch</c> is called to create a switch.
             /// </summary>
@@ -261,10 +335,7 @@ namespace PKDS.Entities
                     .GetChild(UnityEngine.Random.Range(0, switchPlaceholderContainer.childCount));
                 switchComponent = Instantiate(switchPrefab, randomPlaceholder.position, randomPlaceholder.rotation)
                     .GetComponent<Switch>();
-                switchComponent.transform.SetParent(randomPlaceholder);
-                switchComponent.transform.localScale = new Vector3(1f, 1f, 1f);
-                switchComponent.gameObject.name = "Switch";
-                switchComponent.targetHouseSet = this;
+                switchComponent.Initialize("Switch", randomPlaceholder, new Vector3(1f, 1f, 1f), this);
             }
             
             /// <summary>
@@ -277,10 +348,20 @@ namespace PKDS.Entities
                     .GetChild(UnityEngine.Random.Range(0, keyPlaceholderContainer.childCount));
                 keyComponent = Instantiate(keyPrefab, randomPlaceholder.position, randomPlaceholder.rotation)
                     .GetComponent<Key>();
-                keyComponent.transform.SetParent(randomPlaceholder);
-                keyComponent.transform.localScale = new Vector3(1f, 1f, 1f);
-                keyComponent.gameObject.name = "Key";
-                keyComponent.targetHouseSet = childHouseSet;
+                keyComponent.Initialize("Key", randomPlaceholder, new Vector3(1f, 1f, 1f), this);
+            }
+            
+            /// <summary>
+            /// Method <c>DestroyExistingSwitchesAndKeys</c> is called to destroy existing switches and keys.
+            /// </summary>
+            private void DestroyExistingSwitchesAndKeys()
+            {
+                var existingSwitches = GetComponentsInChildren<Switch>();
+                foreach (var existingSwitch in existingSwitches)
+                    Destroy(existingSwitch.gameObject);
+                var existingKeys = GetComponentsInChildren<Key>();
+                foreach (var existingKey in existingKeys)
+                    Destroy(existingKey.gameObject);
             }
         
         #endregion
@@ -300,9 +381,72 @@ namespace PKDS.Entities
             /// </summary>
             protected override void Highlight()
             {
-                if (loopBehaviour != LoopBehaviour.Click)
+                if (loopBehaviour != Loop.Behaviour.Click)
                     return;
                 base.Highlight();
+            }
+        
+        #endregion
+        
+        #region Round Methods
+        
+            /// <summary>
+            /// Method <c>SetRoundTime</c> sets the round time.
+            /// </summary>
+            private void SetRoundTime()
+            {
+                var gameDuration = GameManager.Instance.GameTime;
+                if (gameDuration == 0)
+                {
+                    _roundTime = (GameManager.Instance.MaxRoundTime + GameManager.Instance.MinRoundTime) / 2;
+                }
+                else
+                {
+                    var elapsedTime = gameDuration - GameManager.Instance.GameTimeLeft;
+                    var timeRatio = Mathf.Clamp01(elapsedTime / (gameDuration * 0.75f));
+                    _roundTime = Mathf.Lerp(GameManager.Instance.MaxRoundTime, GameManager.Instance.MinRoundTime, timeRatio);
+                }
+            }
+            
+            /// <summary>
+            /// Method <c>RoundStart</c> starts the round.
+            /// </summary>
+            private void RoundStart()
+            {
+                GameManager.Instance.Round++;
+                PreventInteraction(false, ScopeGlobal);
+                _isRoundStarted = true;
+            }
+            
+            /// <summary>
+            /// Method <c>RoundUpdate</c> updates the round.
+            /// </summary>
+            private void RoundUpdate()
+            {
+                if (!_isRoundStarted || !GameManager.Instance.IsGameStarted)
+                    return;
+                // Update the timer
+                _roundTime -= Time.deltaTime;
+                _roundTime = Mathf.Clamp(_roundTime, 0f, GameManager.Instance.MaxRoundTime);
+                // If the time is up, end the round in failure
+                if (_roundTime > 0f)
+                    return;
+                RoundEnd(false);
+            }
+            
+            /// <summary>
+            /// Method <c>EndRound</c> ends the round.
+            /// </summary>
+            /// <param name="success">Whether the round was successful.</param>
+            public void RoundEnd(bool success = true)
+            {
+                _isRoundStarted = false;
+                PreventInteraction(true, ScopeBoth);
+                if (success)
+                    GameManager.Instance.IncreaseWinCount();
+                else
+                    GameManager.Instance.IncreaseLossCount();
+                childHouseSet.ZoomIn();
             }
         
         #endregion

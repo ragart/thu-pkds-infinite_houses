@@ -8,9 +8,18 @@ namespace PKDS.Entities
     /// <summary>
     /// Class <c>Interactable</c> represents any interactable object.
     /// </summary>
-    public class Interactable : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerDownHandler,
+    public abstract class Interactable : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerDownHandler,
         IPointerUpHandler
     {
+        /// <value>Property <c>ScopeLocal</c> represents the local scope.</value>
+        protected const int ScopeLocal = 0;
+        
+        /// <value>Property <c>ScopeGlobal</c> represents the global scope.</value>
+        protected const int ScopeGlobal = 1;
+        
+        /// <value>Property <c>ScopeBoth</c> represents both local and global scopes.</value>
+        protected const int ScopeBoth = 2;
+        
         #region Outline Properties
 
             /// <value>Property <c>OutlineComponent</c> represents the outline of the object.</value>
@@ -29,10 +38,10 @@ namespace PKDS.Entities
             /// <value>Property <c>_isKeyPressed</c> represents if a key is pressed over the object.</value>
             private bool _isKeyPressed;
 
-            /// <value>Property <c>_isInteractionPrevented</c> represents if the interaction is prevented.</value>
-            private bool _isInteractionPrevented;
+            /// <value>Property <c>_isInteractionEnabled</c> represents if the interaction is enabled.</value>
+            private bool _isInteractionEnabled;
 
-            #endregion
+        #endregion
         
         #region Unity Event Methods
 
@@ -49,10 +58,23 @@ namespace PKDS.Entities
             /// <summary>
             /// Method <c>Update</c> is called every frame, if the MonoBehaviour is enabled.
             /// </summary>
-            private void Update()
+            protected virtual void Update()
             {
                 Highlight();
             }
+        
+        #endregion
+        
+        #region Custom Event Methods
+
+            /// <summary>
+            /// Method <c>Initialize</c> initializes the switch object.
+            /// </summary>
+            /// <param name="setName">The name of the switch object.</param>
+            /// <param name="setParent">The parent of the switch object.</param>
+            /// <param name="setScale">The scale of the switch object.</param>
+            /// <param name="setHouseSet">The house set of the switch object.</param>
+            public abstract void Initialize(string setName, Transform setParent, Vector3 setScale, HouseSet setHouseSet);
         
         #endregion
         
@@ -88,7 +110,7 @@ namespace PKDS.Entities
                         if (_isKeyPressed)
                             break;
                         _isKeyPressed = true;
-                        if (_isInteractionPrevented || GameManager.Instance.areAllInteractionsPrevented)
+                        if (!IsInteractionPossible())
                             break;
                         HandleLeftClickDown();
                         break;
@@ -110,7 +132,7 @@ namespace PKDS.Entities
                 {
                     case PointerEventData.InputButton.Left:
                         _isKeyPressed = false;
-                        if (_isInteractionPrevented || GameManager.Instance.areAllInteractionsPrevented)
+                        if (!IsInteractionPossible())
                             break;
                         HandleLeftClickUp();
                         break;
@@ -151,7 +173,7 @@ namespace PKDS.Entities
             /// <summary>
             /// Method <c>SetOutline</c> sets the outline component.
             /// </summary>
-            protected virtual void SetOutline()
+            protected void SetOutline()
             {
                 OutlineComponent = OutlineTarget.GetComponent<Outline>()
                                    ?? OutlineTarget.gameObject.AddComponent<Outline>();
@@ -160,7 +182,7 @@ namespace PKDS.Entities
             /// <summary>
             /// Method <c>ConfigureOutline</c> configures the outline component.
             /// </summary>
-            protected virtual void ConfigureOutline()
+            protected void ConfigureOutline()
             {
                 OutlineComponent.OutlineMode = Outline.Mode.OutlineVisible;
                 OutlineComponent.OutlineColor = Color.magenta;
@@ -173,17 +195,47 @@ namespace PKDS.Entities
             /// </summary>
             protected virtual void Highlight()
             {
-                if (_isKeyPressed || _isInteractionPrevented || GameManager.Instance.areAllInteractionsPrevented)
-                    return;
-                OutlineComponent.enabled = _isPointerOver;
+                if (!IsInteractionPossible())
+                    OutlineComponent.enabled = false;
+                else if (!_isKeyPressed)
+                    OutlineComponent.enabled = _isPointerOver;
             }
         
         #endregion
+        
+        #region State Methods
+        
+            protected bool IsInteractionPossible()
+            {
+                return _isInteractionEnabled
+                       && GameManager.Instance.IsInteractionEnabled
+                       && GameManager.Instance.IsGameStarted;
+            }
+    
+            /// <summary>
+            /// Method <c>PreventInteraction</c> prevents the interaction.
+            /// </summary>
+            /// <param name="prevent">Whether to prevent the interaction.</param>
+            /// <param name="scope">The scope of the interaction prevention.</param>
+            protected void PreventInteraction(bool prevent = true, int scope = 0)
+            {
+                switch (scope)
+                {
+                    case ScopeLocal:
+                        _isInteractionEnabled = !prevent;
+                        break;
+                    case ScopeGlobal:
+                        GameManager.Instance.PreventInteraction(prevent);
+                        break;
+                    case ScopeBoth:
+                        _isInteractionEnabled = !prevent;
+                        GameManager.Instance.PreventInteraction(prevent);
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
+            }
 
-        protected void PreventInteraction()
-        {
-            _isInteractionPrevented = true;
-            OutlineComponent.enabled = false;
-        }
+        #endregion
     }
 }
