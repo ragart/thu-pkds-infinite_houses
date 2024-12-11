@@ -77,8 +77,8 @@ namespace PKDS.Entities
 
         #region Zoom Properties
 
-            /// <value>Property <c>zoomDelay</c> represents the velocity of the zoom.</value>
-            private float _zoomDelay = 5f;
+            /// <value>Property <c>ZoomDelay</c> represents the velocity of the zoom.</value>
+            private float ZoomDelay { get; set; } = 5.0f;
             
         #endregion
         
@@ -95,6 +95,9 @@ namespace PKDS.Entities
         
             /// <value>Property <c>_roundTime</c> represents the time of the round.</value>
             private float _roundTime;
+            
+            /// <value>Property <c>ForcedRoundTime</c> represents the forced time of the round.</value>
+            private float ForcedRoundTime { get; set; }
             
             /// <value>Property <c>_isRoundStarted</c> represents if the round is started.</value>
             private bool _isRoundStarted;
@@ -184,33 +187,29 @@ namespace PKDS.Entities
             /// <exception cref="ArgumentOutOfRangeException">Thrown when an argument is outside the range of valid values.</exception>
             private void DelayedStart()
             {
-                // Set the round time
-                SetRoundTime();
-
                 // Check if the behaviour of the first child is different from the game loop behaviour
                 if (loopBehaviour == Loop.Behaviour.Start && childLoopBehaviour != GameManager.Instance.LoopBehaviour)
                 {
                     childLoopBehaviour = GameManager.Instance.LoopBehaviour;
                     childHouseSet.SetLoopBehaviour(childLoopBehaviour, childLoopBehaviour);
                 }
-
-                // Check the behaviour of the house set
-                var targetLoopBehaviour = (loopBehaviour == Loop.Behaviour.Start) ? childLoopBehaviour : loopBehaviour;
-                switch (targetLoopBehaviour)
+                
+                // Set the forced round time
+                if (childLoopBehaviour == Loop.Behaviour.Random)
                 {
-                    case Loop.Behaviour.None:
-                    case Loop.Behaviour.Start:
-                    case Loop.Behaviour.Auto:
-                    case Loop.Behaviour.Click:
-                        break;
-                    case Loop.Behaviour.SwitchKey:
-                        CreateSwitch();
-                        break;
-                    default:
-                        throw new ArgumentOutOfRangeException();
+                    ForcedRoundTime = childHouseSet.loopBehaviour == Loop.Behaviour.Auto 
+                        ? 0.5f 
+                        : UnityEngine.Random.Range(GameManager.Instance.MinRoundTime, GameManager.Instance.MaxRoundTime);
                 }
 
-                // Set the current behaviour to none
+                // Set the round time
+                SetRoundTime();
+
+                // Check the behaviour of the house set
+                if (childHouseSet.loopBehaviour == Loop.Behaviour.SwitchKey)
+                    CreateSwitch();
+
+                // Set the current behaviour to none for preventing highlighting and interaction
                 loopBehaviour = Loop.Behaviour.None;
 
                 // Start the round
@@ -242,20 +241,8 @@ namespace PKDS.Entities
             {
                 if (parentHouseSet == null)
                     return;
-                switch (loopBehaviour)
-                {
-                    case Loop.Behaviour.None:
-                    case Loop.Behaviour.Start:
-                    case Loop.Behaviour.Auto:
-                        break;
-                    case Loop.Behaviour.Click:
-                        OutlineComponent.enabled = false;
-                        break;
-                    case Loop.Behaviour.SwitchKey:
-                        break;
-                    default:
-                        throw new ArgumentOutOfRangeException();
-                }
+                if (loopBehaviour == Loop.Behaviour.Click)
+                    OutlineComponent.enabled = false;
                 CreateChildHouseSet();
                 StartCoroutine(ZoomInCoroutine());
             }
@@ -266,11 +253,11 @@ namespace PKDS.Entities
             private IEnumerator ZoomInCoroutine()
             {
                 // Scale the game object progressively
-                var targetScale = new Vector3(50f, 50f, 50f);
+                var targetScale = new Vector3(50.0f, 50.0f, 50.0f);
                 var initialScale = parentHouseSet.transform.localScale;
-                for (var elapsedTime = 0f; elapsedTime < _zoomDelay; elapsedTime += Time.deltaTime)
+                for (var elapsedTime = 0.0f; elapsedTime < ZoomDelay; elapsedTime += Time.deltaTime)
                 {
-                    parentHouseSet.transform.localScale = Vector3.Lerp(initialScale, targetScale, elapsedTime / _zoomDelay);
+                    parentHouseSet.transform.localScale = Vector3.Lerp(initialScale, targetScale, elapsedTime / ZoomDelay);
                     yield return null;
                 }
                 parentHouseSet.transform.localScale = targetScale;
@@ -281,9 +268,6 @@ namespace PKDS.Entities
                 // Destroy the parent house set
                 Destroy(parentHouseSet.gameObject);
                 parentHouseSet = null;
-
-                // Assign the correct behaviour to the child house set
-                childHouseSet.loopBehaviour = childLoopBehaviour;
                 
                 // Start the house set
                 DelayedStart();
@@ -301,9 +285,9 @@ namespace PKDS.Entities
                 // Create and configure the child house set
                 childHouseSet = Instantiate(houseSetPrefab, houseSetPlaceholder.position, houseSetPlaceholder.rotation)
                     .GetComponent<HouseSet>();
-                childHouseSet.Initialize("HouseSet" + GameManager.Instance.Round, houseSetPlaceholder, new Vector3(1f, 1f, 1f), this);
+                childHouseSet.Initialize("HouseSet" + GameManager.Instance.Round, houseSetPlaceholder, new Vector3(1.0f, 1.0f, 1.0f), this);
                 childHouseSet.SetLoopBehaviour(childLoopBehaviour, childLoopBehaviour);
-                childHouseSet.SetZoomDelay(GameManager.Instance.ZoomDelay);
+                childHouseSet.ZoomDelay = GameManager.Instance.ZoomDelay;
             }
 
             /// <summary>
@@ -313,16 +297,8 @@ namespace PKDS.Entities
             /// <param name="setChildLoopBehaviour"></param>
             private void SetLoopBehaviour(Loop.Behaviour setLoopBehaviour, Loop.Behaviour setChildLoopBehaviour)
             {
-                loopBehaviour = setLoopBehaviour;
+                loopBehaviour = (setLoopBehaviour == Loop.Behaviour.Random) ? Loop.GetRandomBehaviour() : setLoopBehaviour;
                 childLoopBehaviour = setChildLoopBehaviour;
-            }
-            
-            /// <summary>
-            /// Method <c>SetZoomDelay</c> sets the zoom delay.
-            /// </summary>
-            private void SetZoomDelay(float setZoomDelay)
-            {
-                _zoomDelay = setZoomDelay;
             }
 
             /// <summary>
@@ -335,7 +311,7 @@ namespace PKDS.Entities
                     .GetChild(UnityEngine.Random.Range(0, switchPlaceholderContainer.childCount));
                 switchComponent = Instantiate(switchPrefab, randomPlaceholder.position, randomPlaceholder.rotation)
                     .GetComponent<Switch>();
-                switchComponent.Initialize("Switch", randomPlaceholder, new Vector3(1f, 1f, 1f), this);
+                switchComponent.Initialize("Switch", randomPlaceholder, new Vector3(1.0f, 1.0f, 1.0f), this);
             }
             
             /// <summary>
@@ -348,7 +324,7 @@ namespace PKDS.Entities
                     .GetChild(UnityEngine.Random.Range(0, keyPlaceholderContainer.childCount));
                 keyComponent = Instantiate(keyPrefab, randomPlaceholder.position, randomPlaceholder.rotation)
                     .GetComponent<Key>();
-                keyComponent.Initialize("Key", randomPlaceholder, new Vector3(1f, 1f, 1f), this);
+                keyComponent.Initialize("Key", randomPlaceholder, new Vector3(1.0f, 1.0f, 1.0f), this);
             }
             
             /// <summary>
@@ -396,16 +372,15 @@ namespace PKDS.Entities
             private void SetRoundTime()
             {
                 var gameDuration = GameManager.Instance.GameTime;
-                if (gameDuration == 0)
-                {
-                    _roundTime = (GameManager.Instance.MaxRoundTime + GameManager.Instance.MinRoundTime) / 2;
-                }
-                else
-                {
-                    var elapsedTime = gameDuration - GameManager.Instance.GameTimeLeft;
-                    var timeRatio = Mathf.Clamp01(elapsedTime / (gameDuration * 0.75f));
-                    _roundTime = Mathf.Lerp(GameManager.Instance.MaxRoundTime, GameManager.Instance.MinRoundTime, timeRatio);
-                }
+                _roundTime = ForcedRoundTime > 0 
+                    ? ForcedRoundTime 
+                    : gameDuration == 0
+                        // If the game duration is 0, set the round time to the average of the max and min round times
+                        ? (GameManager.Instance.MaxRoundTime + GameManager.Instance.MinRoundTime) / 2 
+                        // Otherwise, set the round time depending on the elapsed time of the game
+                        : Mathf.Lerp(GameManager.Instance.MaxRoundTime,
+                            GameManager.Instance.MinRoundTime, 
+                            Mathf.Clamp01((gameDuration - GameManager.Instance.GameTimeLeft) / (gameDuration * 0.75f)));
             }
             
             /// <summary>
@@ -427,9 +402,9 @@ namespace PKDS.Entities
                     return;
                 // Update the timer
                 _roundTime -= Time.deltaTime;
-                _roundTime = Mathf.Clamp(_roundTime, 0f, GameManager.Instance.MaxRoundTime);
+                _roundTime = Mathf.Clamp(_roundTime, 0.0f, GameManager.Instance.MaxRoundTime);
                 // If the time is up, end the round in failure
-                if (_roundTime > 0f)
+                if (_roundTime > 0.0f)
                     return;
                 RoundEnd(false);
             }
@@ -442,10 +417,13 @@ namespace PKDS.Entities
             {
                 _isRoundStarted = false;
                 PreventInteraction(true, ScopeBoth);
-                if (success)
-                    GameManager.Instance.IncreaseWinCount();
-                else
-                    GameManager.Instance.IncreaseLossCount();
+                if (childHouseSet.loopBehaviour is Loop.Behaviour.Click or Loop.Behaviour.SwitchKey)
+                {
+                    if (success)
+                        GameManager.Instance.IncreaseWinCount();
+                    else
+                        GameManager.Instance.IncreaseLossCount();
+                }
                 childHouseSet.ZoomIn();
             }
         

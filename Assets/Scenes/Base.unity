@@ -299,10 +299,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ec9e1fe4a9ef3ae448d3b867511aa038, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  loopBehaviour: 4
+  loopBehaviour: 5
   gameTime: 0
   maxRoundTime: 5
-  minRoundTime: 5
+  minRoundTime: 1
   showScore: 1
   zoomDelay: 0.5
 --- !u!1 &64989592
