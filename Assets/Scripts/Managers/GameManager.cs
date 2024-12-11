@@ -1,4 +1,5 @@
 using System;
+using PKDS.Entities;
 using UnityEngine;
 using PKDS.Properties;
 
@@ -27,53 +28,37 @@ namespace PKDS.Managers
         
         #region Game Properties
         
-            // TODO: Presets (Scriptable Objects)
-            
-            /// <value>Property <c>loopBehaviour</c> represents the loop behaviour.</value>
+            /// <value>Property <c>gameMode</c> represents the game mode.</value>
             [Header("Game Properties")]
             [SerializeField]
-            private Loop.Behaviour loopBehaviour = Loop.Behaviour.SwitchKey;
+            private GameMode gameMode;
+            
+            /// <value>Property <c>GameMode</c> represents the game mode.</value>
+            public GameMode GameMode => gameMode;
             
             /// <value>Property <c>LoopBehaviour</c> represents the loop behaviour.</value>
-            public Loop.Behaviour LoopBehaviour => loopBehaviour;
-            
-            /// <value>Property <c>gameTime</c> represents the time limit of the game.</value>
-            [SerializeField]
-            private float gameTime = 60f;
+            public Loop.Behaviour LoopBehaviour => gameMode.loopBehaviour;
             
             /// <value>Property <c>GameTime</c> represents the time limit of the game.</value>
-            public float GameTime => gameTime;
+            public float GameTime => gameMode.gameTime;
 
             /// <value>Property <c>GameTimeLeft</c> represents the time left of the game.</value>
             public float GameTimeLeft { get; private set; }
             
-            /// <value>Property <c>maxRoundTime</c> represents the maximum time of a round.</value>
-            [SerializeField]
-            private float maxRoundTime = 5f;
-            
             /// <value>Property <c>MaxRoundTime</c> represents the maximum time of a round.</value>
-            public float MaxRoundTime => maxRoundTime;
-            
-            /// <value>Property <c>minRoundTime</c> represents the minimum time of a round.</value>
-            [SerializeField]
-            private float minRoundTime = 2f;
+            public float MaxRoundTime => gameMode.maxRoundTime;
             
             /// <value>Property <c>MinRoundTime</c> represents the minimum time of a round.</value>
-            public float MinRoundTime => minRoundTime;
+            public float MinRoundTime => gameMode.minRoundTime;
             
-            /// <value>Property <c>showScore</c> represents if the score is shown.</value>
-            [SerializeField]
-            private bool showScore = true;
+            /// <value>Property <c>ShowScore</c> represents if the score is shown.</value>
+            public bool ShowScore => gameMode.showScore;
 
             /// <value>Property <c>round</c> represents the current round.</value>
             public int Round { get; set; }
-
-            /// <value>Property <c>zoomDelay</c> represents the delay of the zoom effect.</value>
-            [SerializeField]
-            private float zoomDelay = 5f;
             
             /// <value>Property <c>ZoomDelay</c> represents the delay of the zoom effect.</value>
-            public float ZoomDelay => zoomDelay;
+            public float ZoomDelay => gameMode.zoomDelay;
 
             #endregion
         
@@ -101,10 +86,7 @@ namespace PKDS.Managers
                     return;
                 }
                 Instance = this;
-                GameTimeLeft = gameTime;
-                
-                // Ensure the minimum round time is less than the maximum round time
-                minRoundTime = Mathf.Min(minRoundTime, maxRoundTime);
+                LoadGameMode(gameMode);
             }
             
             /// <summary>
@@ -140,34 +122,47 @@ namespace PKDS.Managers
         #region Game Methods
         
             /// <summary>
+            /// Method <c>LoadGameMode</c> loads the game mode.
+            /// </summary>
+            /// <param name="setGameMode">The game mode to load.</param>
+            private void LoadGameMode(GameMode setGameMode)
+            {
+                gameMode = setGameMode;
+                gameMode.minRoundTime = Mathf.Min(gameMode.minRoundTime, gameMode.maxRoundTime);
+            }
+        
+            /// <summary>
             /// Method <c>StartGame</c> starts the game.
             /// </summary>
             private void GameStart()
             {
                 // Reset the game time
-                GameTimeLeft = gameTime;
+                GameTimeLeft = GameTime;
                 UIManager.Instance.UpdateTimeText(GameTimeLeft);
-                UIManager.Instance.ShowTimer(gameTime > 0f);
+                UIManager.Instance.ShowTimer(GameTime > 0f);
                 
                 // Reset the score
                 _wins = 0;
                 _loses = 0;
                 UIManager.Instance.UpdateWinsText(_wins);
                 UIManager.Instance.UpdateLosesText(_loses);
-                UIManager.Instance.ShowScore(showScore);
+                UIManager.Instance.ShowScore(ShowScore);
                 
                 // Start the game
-                OnGameStart?.Invoke();
                 IsGameStarted = true;
+                OnGameStart?.Invoke();
             }
 
+            /// <summary>
+            /// Method <c>GameUpdate</c> updates the game.
+            /// </summary>
             private void GameUpdate()
             {
-                if (!IsGameStarted || gameTime <= 0f)
+                if (!IsGameStarted || GameTime <= 0f)
                     return;
                 // Update the game timer and the corresponding UI
                 GameTimeLeft -= Time.deltaTime;
-                GameTimeLeft = Mathf.Clamp(GameTimeLeft, 0f, gameTime);
+                GameTimeLeft = Mathf.Clamp(GameTimeLeft, 0f, GameTime);
                 UIManager.Instance.UpdateTimeText(GameTimeLeft);
                 // If the time is up, end the game
                 if (GameTimeLeft > 0f)
