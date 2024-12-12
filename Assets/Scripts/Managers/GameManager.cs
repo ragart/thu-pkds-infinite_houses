@@ -1,7 +1,9 @@
 using System;
+using PKDS.Controllers;
 using PKDS.Entities;
 using UnityEngine;
 using PKDS.Properties;
+using UnityEngine.SceneManagement;
 
 namespace PKDS.Managers
 {
@@ -26,39 +28,49 @@ namespace PKDS.Managers
         
         #endregion
         
-        #region Game Properties
+        #region Game Mode Properties
         
-            /// <value>Property <c>gameMode</c> represents the game mode.</value>
-            [Header("Game Properties")]
-            [SerializeField]
-            private GameMode gameMode;
+            /// <value>Property <c>gameModes</c> represents a list of game modes.</value>
+            [Header("Game Mode Properties")]
+            public GameMode[] gameModes;
             
-            /// <value>Property <c>GameMode</c> represents the game mode.</value>
-            public GameMode GameMode => gameMode;
+            /// <value>Property <c>gameMode</c> represents the game mode.</value>
+            private GameMode _gameMode;
+            
+            /// <value>Property <c>GameMode</c> represents the current game mode.</value>
+            public GameMode GameMode
+            {
+                get => _gameMode;
+                set => _gameMode = value;
+            }
+        
+        #endregion
+        
+        #region Game Properties
             
             /// <value>Property <c>LoopBehaviour</c> represents the loop behaviour.</value>
-            public Loop.Behaviour LoopBehaviour => gameMode.loopBehaviour;
+            public Loop.Behaviour LoopBehaviour => _gameMode.loopBehaviour;
             
             /// <value>Property <c>GameTime</c> represents the time limit of the game.</value>
-            public float GameTime => gameMode.gameTime;
+            public float GameTime => _gameMode.gameTime;
 
             /// <value>Property <c>GameTimeLeft</c> represents the time left of the game.</value>
             public float GameTimeLeft { get; private set; }
             
             /// <value>Property <c>MaxRoundTime</c> represents the maximum time of a round.</value>
-            public float MaxRoundTime => gameMode.maxRoundTime;
+            public float MaxRoundTime => _gameMode.maxRoundTime;
             
             /// <value>Property <c>MinRoundTime</c> represents the minimum time of a round.</value>
-            public float MinRoundTime => gameMode.minRoundTime;
+            public float MinRoundTime => _gameMode.minRoundTime;
             
             /// <value>Property <c>ShowScore</c> represents if the score is shown.</value>
-            public bool ShowScore => gameMode.showScore;
+            private bool ShowScore => _gameMode.showScore;
 
             /// <value>Property <c>round</c> represents the current round.</value>
             public int Round { get; set; }
             
             /// <value>Property <c>ZoomDelay</c> represents the delay of the zoom effect.</value>
-            public float ZoomDelay => gameMode.zoomDelay;
+            public float ZoomDelay => _gameMode.zoomDelay;
 
             #endregion
         
@@ -70,6 +82,19 @@ namespace PKDS.Managers
             /// <value>Property <c>loses</c> represents the number of loses.</value>
             private int _loses;
         
+        #endregion
+        
+        #region Controller Properties
+        
+            /// <value>Property <c>gameStatsController</c> represents the game stats' controller.</value>
+            [Header("Controller Properties")]
+            [SerializeField]
+            private GameStatsController gameStatsController;
+            
+            /// <value>Property <c>menuController</c> represents the menu controller.</value>
+            [SerializeField]
+            private MenuController menuController;
+            
         #endregion
         
         #region Unity Event Methods
@@ -86,15 +111,6 @@ namespace PKDS.Managers
                     return;
                 }
                 Instance = this;
-                LoadGameMode(gameMode);
-            }
-            
-            /// <summary>
-            /// Method <c>Start</c> is called before the first frame update.
-            /// </summary>
-            private void Start()
-            {
-                GameStart();
             }
             
             /// <summary>
@@ -120,33 +136,23 @@ namespace PKDS.Managers
         #endregion
         
         #region Game Methods
-        
-            /// <summary>
-            /// Method <c>LoadGameMode</c> loads the game mode.
-            /// </summary>
-            /// <param name="setGameMode">The game mode to load.</param>
-            private void LoadGameMode(GameMode setGameMode)
-            {
-                gameMode = setGameMode;
-                gameMode.minRoundTime = Mathf.Min(gameMode.minRoundTime, gameMode.maxRoundTime);
-            }
-        
+
             /// <summary>
             /// Method <c>StartGame</c> starts the game.
             /// </summary>
-            private void GameStart()
+            public void GameStart()
             {
                 // Reset the game time
                 GameTimeLeft = GameTime;
-                UIManager.Instance.UpdateTimeText(GameTimeLeft);
-                UIManager.Instance.ShowTimer(GameTime > 0f);
+                gameStatsController.UpdateTimeText(GameTimeLeft);
+                gameStatsController.ShowTimer(GameTime > 0f);
                 
                 // Reset the score
                 _wins = 0;
                 _loses = 0;
-                UIManager.Instance.UpdateWinsText(_wins);
-                UIManager.Instance.UpdateLosesText(_loses);
-                UIManager.Instance.ShowScore(ShowScore);
+                gameStatsController.UpdateWinsText(_wins);
+                gameStatsController.UpdateLosesText(_loses);
+                gameStatsController.ShowScore(ShowScore);
                 
                 // Start the game
                 IsGameStarted = true;
@@ -163,7 +169,7 @@ namespace PKDS.Managers
                 // Update the game timer and the corresponding UI
                 GameTimeLeft -= Time.deltaTime;
                 GameTimeLeft = Mathf.Clamp(GameTimeLeft, 0f, GameTime);
-                UIManager.Instance.UpdateTimeText(GameTimeLeft);
+                gameStatsController.UpdateTimeText(GameTimeLeft);
                 // If the time is up, end the game
                 if (GameTimeLeft > 0f)
                     return;
@@ -177,6 +183,8 @@ namespace PKDS.Managers
             {
                 PreventInteraction();
                 IsGameStarted = false;
+                menuController.TitleText = "Game Over";
+                UIManager.Instance.menuPanel.SetActive(true);
             }
         
         #endregion
@@ -189,7 +197,7 @@ namespace PKDS.Managers
             public void IncreaseWinCount(int wins = 1)
             {
                 _wins += wins;
-                UIManager.Instance.UpdateWinsText(_wins);
+                gameStatsController.UpdateWinsText(_wins);
             }
                 
             /// <summary>
@@ -198,21 +206,12 @@ namespace PKDS.Managers
             public void IncreaseLossCount(int loses = 1)
             {
                 _loses += loses;
-                UIManager.Instance.UpdateLosesText(_loses);
+                gameStatsController.UpdateLosesText(_loses);
             }
         
         #endregion
         
         #region Game Management Methods
-            
-            /// <summary>
-            /// Method <c>RestartGame</c> restarts the game.
-            /// </summary>
-            public void RestartGame()
-            {
-                StopAllCoroutines();
-                // Do nothing for the moment
-            }
             
             /// <summary>
             /// Method <c>PauseGame</c> pauses the game.
@@ -229,13 +228,13 @@ namespace PKDS.Managers
             public void MainMenu()
             {
                 StopAllCoroutines();
-                // Do nothing for the moment
+                SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
             }
 
             /// <summary>
             /// Method <c>QuitGame</c> quits the game.
             /// </summary>
-            public void QuitGame()
+            public static void QuitGame()
             {
                 Application.Quit();
                 #if UNITY_EDITOR

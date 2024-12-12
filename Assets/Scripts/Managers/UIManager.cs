@@ -1,3 +1,4 @@
+using System.Globalization;
 using UnityEngine;
 using TMPro;
 
@@ -10,86 +11,76 @@ namespace PKDS.Managers
     {
         /// <value>Property <c>Instance</c> represents the instance of the UI manager.</value>
         public static UIManager Instance;
-        
-        /// <value>Property <c>timerContainer</c> represents the container of the timer.</value>
-        [SerializeField]
-        private Transform timerContainer;
-        
-        /// <value>Property <c>timerText</c> represents the text containing the time left of the game.</value>
-        [SerializeField]
-        private TextMeshProUGUI timerText;
-        
-        /// <value>Property <c>scoreContainer</c> represents the container of the score.</value>
-        [SerializeField]
-        private Transform scoreContainer;
-        
-        /// <value>Property <c>winsText</c> represents the text containing the number of wins.</value>
-        [SerializeField]
-        private TextMeshProUGUI winsText;
-        
-        /// <value>Property <c>losesText</c> represents the text containing the number of loses.</value>
-        [SerializeField]
-        private TextMeshProUGUI losesText;
 
-        /// <summary>
-        /// Method <c>Awake</c> initializes the game manager.
-        /// </summary>
-        private void Awake()
-        {
-            // Singleton pattern
-            if (Instance != null && Instance != this)
+        #region Panel Properties
+        
+            /// <value>Property <c>mainMenuPanel</c> represents the main menu panel.</value>
+            [Header("Panel Properties")]
+            public GameObject mainMenuPanel;
+
+            /// <value>Property <c>creditsPanel</c> represents the credits panel.</value>
+            public GameObject creditsPanel;
+
+            /// <value>Property <c>gameStatsPanel</c> represents the game stats panel.</value>
+            public GameObject gameStatsPanel;
+
+            /// <value>Property <c>menuPanel</c> represents the pause panel.</value>
+            public GameObject menuPanel;
+        
+        #endregion
+        
+        #region Unity Event Methodse
+
+            /// <summary>
+            /// Method <c>Awake</c> initializes the game manager.
+            /// </summary>
+            private void Awake()
             {
-                Destroy(gameObject);
-                return;
+                // Singleton pattern
+                if (Instance != null && Instance != this)
+                {
+                    Destroy(gameObject);
+                    return;
+                }
+                Instance = this;
             }
-            Instance = this;
-        }
         
-        /// <summary>
-        /// Method <c>ShowTimer</c> shows or hides the timer.
-        /// </summary>
-        /// <param name="show">The boolean value to show or hide the timer.</param>
-        public void ShowTimer(bool show)
-        {
-            timerContainer.gameObject.SetActive(show);
-        }
+        #endregion
         
-        /// <summary>
-        /// Method <c>ShowScore</c> shows or hides the score.
-        /// </summary>
-        /// <param name="show">The boolean value to show or hide the score.</param>
-        public void ShowScore(bool show)
-        {
-            scoreContainer.gameObject.SetActive(show);
-        }
-        
-        /// <summary>
-        /// Method <c>UpdateTimeText</c> updates the time text.
-        /// </summary>
-        /// <param name="timeLeft">The time left.</param>
-        public void UpdateTimeText(float timeLeft)
-        {
-            var minutes = Mathf.FloorToInt(timeLeft / 60);
-            var seconds = Mathf.FloorToInt(timeLeft % 60);
-            timerText.text = $"{minutes:00}:{seconds:00}";
-        }
-        
-        /// <summary>
-        /// Method <c>UpdateWinsText</c> updates the wins text.
-        /// </summary>
-        /// <param name="wins">The number of wins.</param>
-        public void UpdateWinsText(int wins)
-        {
-            winsText.text = wins.ToString();
-        }
-        
-        /// <summary>
-        /// Method <c>UpdateLosesText</c> updates the loses text.
-        /// </summary>
-        /// <param name="loses">The number of loses.</param>
-        public void UpdateLosesText(int loses)
-        {
-            losesText.text = loses.ToString();
-        }
+        #region Input Sanitizing Methods
+
+            /// <summary>
+            /// Method <c>CleanInputValue</c> cleans the input value.
+            /// </summary>
+            /// <param name="input">The input value.</param>
+            /// <returns>The cleaned input value.</returns>
+            public static string CleanInputValue(string input)
+            {
+                return input.Trim().Replace(" ", string.Empty);
+            }
+            
+            /// <summary>
+            /// Method <c>ParseFloatValue</c> parses the float value.
+            /// </summary>
+            /// <param name="input">The input value.</param>
+            /// <returns>The parsed float value.</returns>
+            public float? ParseFloatValue(string input)
+            {
+                input = CleanInputValue(input).Replace(',', '.');
+                return float.TryParse(input, NumberStyles.Any, CultureInfo.InvariantCulture, out var value) ? value : null;
+            }
+            
+            /// <summary>
+            /// Method <c>ParseIntValue</c> parses the int value.
+            /// </summary>
+            /// <param name="value">The input value.</param>
+            /// <returns>The parsed int value.</returns>
+            public int? ParseIntValue(string value)
+            {
+                var floatValue = ParseFloatValue(value);
+                return floatValue.HasValue ? Mathf.FloorToInt(floatValue.Value) : null;
+            }
+
+        #endregion
     }
 }

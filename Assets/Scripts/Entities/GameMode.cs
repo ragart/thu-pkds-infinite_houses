@@ -13,13 +13,13 @@ namespace PKDS.Entities
         public Loop.Behaviour loopBehaviour = Loop.Behaviour.None;
         
         /// <value>Property <c>gameTime</c> represents the time limit of the game.</value>
-        public float gameTime = 60;
+        public int gameTime = 60;
         
         /// <value>Property <c>maxRoundTime</c> represents the maximum time of a round.</value>
-        public float maxRoundTime = 5;
+        public int maxRoundTime = 5;
         
         /// <value>Property <c>minRoundTime</c> represents the minimum time of a round.</value>
-        public float minRoundTime = 1;
+        public int minRoundTime = 1;
         
         /// <value>Property <c>showScore</c> represents if the score is shown.</value>
         public bool showScore = true;

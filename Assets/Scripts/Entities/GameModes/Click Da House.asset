@@ -10,12 +10,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ff83687a0cd43b24a8968423ab393b29, type: 3}
-  m_Name: THE RIDE NEVER ENDS
+  m_Name: Click Da House
   m_EditorClassIdentifier: 
-  modeName: THE RIDE NEVER ENDS
-  loopBehaviour: 2
-  gameTime: 0
-  maxRoundTime: 0.01
-  minRoundTime: 0.01
-  showScore: 0
-  zoomDelay: 1
+  modeName: Click Da House
+  loopBehaviour: 3
+  gameTime: 60
+  maxRoundTime: 5
+  minRoundTime: 1
+  showScore: 1
+  zoomDelay: 0.5
