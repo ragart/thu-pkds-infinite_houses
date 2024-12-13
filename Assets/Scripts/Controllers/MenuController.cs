@@ -18,6 +18,7 @@ namespace PKDS.Controllers
         /// <value>Property <c>TitleText</c> represents the title text value.</value>
         public string TitleText
         {
+            get => titleText.text;
             set => titleText.text = value;
         }
         
@@ -34,7 +35,6 @@ namespace PKDS.Controllers
         /// </summary>
         private void Start()
         {
-            titleText.text = string.Empty;
             mainMenuButton.onClick.AddListener(OnMainMenuButtonClick);
             quitGameButton.onClick.AddListener(OnQuitGameButtonClick);
         }

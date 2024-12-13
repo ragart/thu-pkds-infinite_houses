@@ -263,7 +263,7 @@ namespace PKDS.Controllers
                 customGameMode.gameTime.ToString(CultureInfo.InvariantCulture),
                 typeof(int),
                 newValue => customGameMode.gameTime = newValue,
-                10.0f,
+                0.0f,
                 300.0f);
         }
         

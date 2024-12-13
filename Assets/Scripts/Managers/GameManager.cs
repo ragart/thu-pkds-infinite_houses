@@ -25,6 +25,9 @@ namespace PKDS.Managers
 
             /// <value>Property <c>IsInteractionEnabled</c> represents if interactions are enabled.</value>
             public bool IsInteractionEnabled { get; private set; }
+            
+            /// <value>Property <c>IsGamePaused</c> represents if the game is paused.</value>
+            public bool IsGamePaused { get; private set; }
         
         #endregion
         
@@ -111,6 +114,7 @@ namespace PKDS.Managers
                     return;
                 }
                 Instance = this;
+                Time.timeScale = 1f;
             }
             
             /// <summary>
@@ -183,8 +187,8 @@ namespace PKDS.Managers
             {
                 PreventInteraction();
                 IsGameStarted = false;
-                menuController.TitleText = "Game Over";
                 UIManager.Instance.menuPanel.SetActive(true);
+                menuController.TitleText = "Game Over";
             }
         
         #endregion
@@ -211,15 +215,31 @@ namespace PKDS.Managers
         
         #endregion
         
+        #region Input Methods
+        
+            /// <summary>
+            /// Method <c>OnEscapeKeyPress</c> handles the escape key press event.
+            /// </summary>
+            public void OnCancel()
+            {
+                if (!IsGameStarted)
+                    return;
+                TogglePauseGame();
+            }
+            
+        #endregion
+        
         #region Game Management Methods
             
             /// <summary>
-            /// Method <c>PauseGame</c> pauses the game.
-            /// </summary>
-            /// <param name="pause">The pause state of the game.</param> 
-            public void PauseGame(bool pause)
+            /// Method <c>TogglePauseGame</c> pauses or resumes the game.
+            /// </summary> 
+            private void TogglePauseGame()
             {
-                Time.timeScale = pause ? 0f : 1f;
+                Time.timeScale = IsGamePaused ? 1f : 0f;
+                UIManager.Instance.menuPanel.SetActive(!IsGamePaused);
+                menuController.TitleText = "Pause";
+                IsGamePaused = !IsGamePaused;
             }
             
             /// <summary>

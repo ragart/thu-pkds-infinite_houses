@@ -74,13 +74,6 @@ namespace PKDS.Entities
             private Key keyComponent;
             
         #endregion
-
-        #region Zoom Properties
-
-            /// <value>Property <c>ZoomDelay</c> represents the velocity of the zoom.</value>
-            private float ZoomDelay { get; set; } = 5.0f;
-            
-        #endregion
         
         #region Outline Properties
             
@@ -255,9 +248,9 @@ namespace PKDS.Entities
                 // Scale the game object progressively
                 var targetScale = new Vector3(50.0f, 50.0f, 50.0f);
                 var initialScale = parentHouseSet.transform.localScale;
-                for (var elapsedTime = 0.0f; elapsedTime < ZoomDelay; elapsedTime += Time.deltaTime)
+                for (var elapsedTime = 0.0f; elapsedTime < GameManager.Instance.ZoomDelay; elapsedTime += Time.deltaTime)
                 {
-                    parentHouseSet.transform.localScale = Vector3.Lerp(initialScale, targetScale, elapsedTime / ZoomDelay);
+                    parentHouseSet.transform.localScale = Vector3.Lerp(initialScale, targetScale, elapsedTime / GameManager.Instance.ZoomDelay);
                     yield return null;
                 }
                 parentHouseSet.transform.localScale = targetScale;
@@ -287,7 +280,6 @@ namespace PKDS.Entities
                     .GetComponent<HouseSet>();
                 childHouseSet.Initialize("HouseSet" + GameManager.Instance.Round, houseSetPlaceholder, new Vector3(1.0f, 1.0f, 1.0f), this);
                 childHouseSet.SetLoopBehaviour(childLoopBehaviour, childLoopBehaviour);
-                childHouseSet.ZoomDelay = GameManager.Instance.ZoomDelay;
             }
 
             /// <summary>
