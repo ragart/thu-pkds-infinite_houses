@@ -31,6 +31,7 @@ namespace PKDS.Entities
         /// </summary>
         protected override void HandleLeftClickUp()
         {
+            base.HandleLeftClickUp();
             PreventInteraction();
             houseSet.CreateKey();
         }

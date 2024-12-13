@@ -75,7 +75,7 @@ namespace PKDS.Managers
             /// <value>Property <c>ZoomDelay</c> represents the delay of the zoom effect.</value>
             public float ZoomDelay => _gameMode.zoomDelay;
 
-            #endregion
+        #endregion
         
         #region Score Properties
 
@@ -158,6 +158,9 @@ namespace PKDS.Managers
                 gameStatsController.UpdateLosesText(_loses);
                 gameStatsController.ShowScore(ShowScore);
                 
+                // Play the music
+                AudioManager.Instance.PlayShortenedBackgroundMusic(GameTime);
+                
                 // Start the game
                 IsGameStarted = true;
                 OnGameStart?.Invoke();
@@ -189,6 +192,7 @@ namespace PKDS.Managers
                 IsGameStarted = false;
                 UIManager.Instance.menuPanel.SetActive(true);
                 menuController.TitleText = "Game Over";
+                AudioManager.Instance.StopBackgroundMusic();
             }
         
         #endregion
@@ -237,6 +241,7 @@ namespace PKDS.Managers
             private void TogglePauseGame()
             {
                 Time.timeScale = IsGamePaused ? 1f : 0f;
+                AudioManager.Instance.TogglePauseBackgroundMusic();
                 UIManager.Instance.menuPanel.SetActive(!IsGamePaused);
                 menuController.TitleText = "Pause";
                 IsGamePaused = !IsGamePaused;

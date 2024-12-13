@@ -30,6 +30,30 @@ namespace PKDS.Controllers
             /// <value>Property <c>gameModeRightButton</c> represents the game mode right button.</value>
             [SerializeField]
             private Button gameModeRightButton;
+            
+            /// <value>Property <c>musicModeLeftButton</c> represents the music mode left button.</value>
+            [SerializeField]
+            private Button musicModeLeftButton;
+            
+            /// <value>Property <c>musicModeText</c> represents the text containing the music mode.</value>
+            [SerializeField]
+            private TextMeshProUGUI musicModeText;
+            
+            /// <value>Property <c>musicModeRightButton</c> represents the music mode right button.</value>
+            [SerializeField]
+            private Button musicModeRightButton;
+            
+            /// <value>Property <c>sfxModeLeftButton</c> represents the sound effects mode left button.</value>
+            [SerializeField]
+            private Button sfxModeLeftButton;
+            
+            /// <value>Property <c>sfxModeText</c> represents the text containing the SFX mode.</value>
+            [SerializeField]
+            private TextMeshProUGUI sfxModeText;
+            
+            /// <value>Property <c>sfxModeRightButton</c> represents the sound effects mode right button.</value>
+            [SerializeField]
+            private Button sfxModeRightButton;
 
             /// <value>Property <c>startGameButton</c> represents the start game button.</value>
             [SerializeField]
@@ -55,11 +79,13 @@ namespace PKDS.Controllers
             /// <value>Property <c>_loopBehaviours</c> represents the loop behaviours.</value>
             private Loop.Behaviour[] _loopBehaviours;
             
+            /// <value>Property <c>_loopBehavioursList</c> represents the loop behaviours list.</value>
             private List<string> _loopBehavioursList;
             
             /// <value>Property <c>_filteredLoopBehaviours</c> represents the filtered loop behaviours.</value>
             private Loop.Behaviour[] _filteredLoopBehaviours;
             
+            /// <value>Property <c>_filteredLoopBehavioursList</c> represents the filtered loop behaviours list.</value>
             private List<string> _filteredLoopBehavioursList;
 
             /// <value>Property <c>customContainer</c> represents the custom container.</value>
@@ -122,6 +148,10 @@ namespace PKDS.Controllers
                 // Set the listeners
                 gameModeLeftButton.onClick.AddListener(OnGameModeLeftButtonClick);
                 gameModeRightButton.onClick.AddListener(OnGameModeRightButtonClick);
+                musicModeLeftButton.onClick.AddListener(OnMusicModeLeftButtonClick);
+                musicModeRightButton.onClick.AddListener(OnMusicModeRightButtonClick);
+                sfxModeLeftButton.onClick.AddListener(OnSfxModeLeftButtonClick);
+                sfxModeRightButton.onClick.AddListener(OnSfxModeRightButtonClick);
                 startGameButton.onClick.AddListener(OnStartGameButtonClick);
                 creditsButton.onClick.AddListener(OnCreditsButtonClick);
                 quitGameButton.onClick.AddListener(OnQuitGameButtonClick);
@@ -141,6 +171,7 @@ namespace PKDS.Controllers
         private void SetStartingGameMode()
         {
             GameManager.Instance.GameMode = GameManager.Instance.gameModes[0];
+            gameModeText.text = GameManager.Instance.GameMode.name;
             gameModeLeftButton.gameObject.SetActive(false);
         }
 
@@ -215,6 +246,50 @@ namespace PKDS.Controllers
         }
         
         /// <summary>
+        /// Method <c>OnMusicModeLeftButtonClick</c> handles the music mode left button click event.
+        /// </summary>
+        private void OnMusicModeLeftButtonClick()
+        {
+            AudioManager.Instance.MusicEnabled = true;
+            musicModeText.text = "On";
+            musicModeLeftButton.gameObject.SetActive(false);
+            musicModeRightButton.gameObject.SetActive(true);
+        }
+        
+        /// <summary>
+        /// Method <c>OnMusicModeRightButtonClick</c> handles the music mode right button click event.
+        /// </summary>
+        private void OnMusicModeRightButtonClick()
+        {
+            AudioManager.Instance.MusicEnabled = false;
+            musicModeText.text = "Off";
+            musicModeLeftButton.gameObject.SetActive(true);
+            musicModeRightButton.gameObject.SetActive(false);
+        }
+        
+        /// <summary>
+        /// Method <c>OnSfxModeLeftButtonClick</c> handles the sound effects mode left button click event.
+        /// </summary>
+        private void OnSfxModeLeftButtonClick()
+        {
+            AudioManager.Instance.SfxEnabled = true;
+            sfxModeText.text = "On";
+            sfxModeLeftButton.gameObject.SetActive(false);
+            sfxModeRightButton.gameObject.SetActive(true);
+        }
+        
+        /// <summary>
+        /// Method <c>OnSfxModeRightButtonClick</c> handles the sound effects mode right button click event.
+        /// </summary>
+        private void OnSfxModeRightButtonClick()
+        {
+            AudioManager.Instance.SfxEnabled = false;
+            sfxModeText.text = "Off";
+            sfxModeLeftButton.gameObject.SetActive(true);
+            sfxModeRightButton.gameObject.SetActive(false);
+        }
+        
+        /// <summary>
         /// Method <c>OnStartGameButtonClick</c> handles the start game button click event.
         /// </summary>
         private void OnStartGameButtonClick()
@@ -264,7 +339,7 @@ namespace PKDS.Controllers
                 typeof(int),
                 newValue => customGameMode.gameTime = newValue,
                 0.0f,
-                300.0f);
+                150.0f);
         }
         
         /// <summary>

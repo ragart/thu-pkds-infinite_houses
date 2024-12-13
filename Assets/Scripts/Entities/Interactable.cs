@@ -43,6 +43,14 @@ namespace PKDS.Entities
 
         #endregion
         
+        #region Sound Properties
+
+            /// <value>Property <c>audioClip</c> represents the audio clip.</value>
+            [Header("Sound Properties")]
+            public AudioClip audioClip;
+        
+        #endregion
+        
         #region Unity Event Methods
 
             /// <summary>
@@ -156,6 +164,8 @@ namespace PKDS.Entities
             /// </summary>
             protected virtual void HandleLeftClickUp()
             {
+                if (audioClip != null)
+                    AudioManager.Instance.PlaySfx(audioClip);
             }
         
         #endregion
@@ -173,7 +183,7 @@ namespace PKDS.Entities
             /// <summary>
             /// Method <c>SetOutline</c> sets the outline component.
             /// </summary>
-            protected void SetOutline()
+            private void SetOutline()
             {
                 OutlineComponent = OutlineTarget.GetComponent<Outline>()
                                    ?? OutlineTarget.gameObject.AddComponent<Outline>();
@@ -182,7 +192,7 @@ namespace PKDS.Entities
             /// <summary>
             /// Method <c>ConfigureOutline</c> configures the outline component.
             /// </summary>
-            protected void ConfigureOutline()
+            private void ConfigureOutline()
             {
                 OutlineComponent.OutlineMode = Outline.Mode.OutlineVisible;
                 OutlineComponent.OutlineColor = Color.magenta;
@@ -205,7 +215,7 @@ namespace PKDS.Entities
         
         #region State Methods
         
-            protected bool IsInteractionPossible()
+            private bool IsInteractionPossible()
             {
                 return _isInteractionEnabled
                        && GameManager.Instance.IsInteractionEnabled

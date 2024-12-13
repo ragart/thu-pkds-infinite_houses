@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   modeName: Switches & Keys
   loopBehaviour: 4
-  gameTime: 60
+  gameTime: 150
   maxRoundTime: 5
   minRoundTime: 2
   showScore: 1

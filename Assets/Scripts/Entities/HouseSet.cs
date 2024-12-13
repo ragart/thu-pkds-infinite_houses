@@ -114,7 +114,7 @@ namespace PKDS.Entities
             /// <summary>
             /// Method <c>Start</c> is called before the first frame update.
             /// </summary>
-            private void Start()
+            protected void Start()
             {
                 if (loopBehaviour == Loop.Behaviour.Start)
                     CreateChildHouseSet();
@@ -220,6 +220,7 @@ namespace PKDS.Entities
             {
                 if (loopBehaviour != Loop.Behaviour.Click)
                     return;
+                base.HandleLeftClickUp();
                 parentHouseSet.RoundEnd();
             }
             
